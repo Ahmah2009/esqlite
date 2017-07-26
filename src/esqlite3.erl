@@ -124,7 +124,7 @@ foreach(F, Sql, Connection) ->
       ColumnNames :: tuple().
 foreach_s(F, Statement) when is_function(F, 1) ->
     case try_step(Statement, 0) of
-        '$done' -> ok;
+        {ok, _AffectedRows} -> ok;
         {error, _} = E -> F(E);
         {row, Row} ->
             F(Row),
@@ -133,7 +133,7 @@ foreach_s(F, Statement) when is_function(F, 1) ->
 foreach_s(F, Statement) when is_function(F, 2) ->
     ColumnNames = column_names(Statement),
     case try_step(Statement, 0) of
-        '$done' -> ok;
+        {ok, _AffectedRows} -> ok;
         {error, _} = E -> F([], E);
         {row, Row} ->
             F(ColumnNames, Row),
@@ -148,7 +148,7 @@ foreach_s(F, Statement) when is_function(F, 2) ->
       Type :: term().
 map_s(F, Statement) when is_function(F, 1) ->
     case try_step(Statement, 0) of
-        '$done' -> [];
+        {ok, _AffectedRows} -> [];
         {error, _} = E -> F(E);
         {row, Row} ->
             [F(Row) | map_s(F, Statement)]
@@ -156,7 +156,7 @@ map_s(F, Statement) when is_function(F, 1) ->
 map_s(F, Statement) when is_function(F, 2) ->
     ColumnNames = column_names(Statement),
     case try_step(Statement, 0) of
-        '$done' -> [];
+        {ok, _AffectedRows} -> [];
         {error, _} = E -> F([], E);
         {row, Row} ->
             [F(ColumnNames, Row) | map_s(F, Statement)]
@@ -166,7 +166,7 @@ map_s(F, Statement) when is_function(F, 2) ->
 -spec fetchone(statement()) -> tuple().
 fetchone(Statement) ->
     case try_step(Statement, 0) of
-        '$done' -> ok;
+        {ok, _AffectedRows} -> ok;
         {error, _} = E -> E;
         {row, Row} -> Row
     end.
@@ -177,7 +177,7 @@ fetchone(Statement) ->
                       {error, term()}.
 fetchall(Statement) ->
     case try_step(Statement, 0) of
-        '$done' ->
+         {ok,_} ->
             [];
         {error, _} = E -> E;
         {row, Row} ->
@@ -188,7 +188,7 @@ fetchall(Statement) ->
     end.
 
 %% Try the step, when the database is busy,
--spec try_step(statement(), non_neg_integer()) -> 
+-spec try_step(statement(), non_neg_integer()) ->
                       '$done' |
                       term().
 try_step(_Statement, Tries) when Tries > 5 ->
